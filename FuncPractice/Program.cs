@@ -13,11 +13,11 @@ namespace FuncPractice
         {
             Data<Fake> repo = new Data<Fake>();
 
-            repo.Add(new Fake() { Name = "aaa" });
-            repo.Add(new Fake() { Name = "bbb" });
-            repo.Add(new Fake() { Name = "ccc" });
+            repo.Add(new Fake() { Name = "aaa", Children = 0 });
+            repo.Add(new Fake() { Name = "bbb", Children = 8 });
+            repo.Add(new Fake() { Name = "ccc", Children = 6 });
 
-            var result = repo.GetSingle(k => k.Name.Equals("ccc"));
+            var result = repo.GetSingle(k => k.Name.Equals("ccc") || k.Children > 0);
 
             result.ForEach((item) => Console.WriteLine(item.Name));
 
@@ -27,6 +27,7 @@ namespace FuncPractice
     public class Fake
     {
         public string Name { get; set; }
+        public int Children { get; set; }
     }
 
     public class Data<T> where T : Fake
@@ -40,7 +41,17 @@ namespace FuncPractice
 
         public List<T> GetSingle(Expression<Func<T, bool>> predicate)
         {
-            Func<Expression<Func<T, bool>>, List<T>> invokeFunction = (key) => Warehouse.AsQueryable().Where(key).ToList();
+            // `return` could be ommitted if only one statement exists in the BODY of ANONYMOUS method.
+            // Func<Expression<Func<T, bool>>, List<T>> invokeFunction = (key) => Warehouse.AsQueryable().Where(key).ToList();
+
+            // Func => Multiple 
+            Func<Expression<Func<T, bool>>, List<T>> invokeFunction = key => 
+                {
+                    // throw new ArgumentOutOfRangeException("doeoe");
+
+                    Console.WriteLine("statement is executed at " + DateTime.Now.ToString());
+                    return Warehouse.AsQueryable().Where(key).ToList();             
+                }; 
 
             return TryGetFunction(invokeFunction, predicate);
         }
@@ -49,7 +60,6 @@ namespace FuncPractice
         private List<T> TryGetFunction(Func<Expression<Func<T, bool>>, List<T>> invokeFunction, Expression<Func<T, bool>> predicate)
         {
             List<T> result = null;
-
             
             try
             {
